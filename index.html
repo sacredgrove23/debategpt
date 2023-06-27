@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Conversation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<style>
+	@keyframes rain {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+    }
+	body {
+		background-color: #1b1b1b;
+		font-family: 'Courier New', monospace;
+		font-size: 18px;
+		color: #33FF33; /* Matrix Green */
+		margin: 0;
+		padding: 20px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 100vh;
+	}	
+
+    #container {
+        width: 40vw;
+        height: 90vh;
+        background-color: #262626;
+        box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        box-sizing: border-box;
+		position: absolute; /* Add this line to position the container */
+		left: 0; /* Add this line to move it to the left */
+    }
+
+    #title {
+		color: #33FF33; /* Matrix Green */
+		font-size: 32px;
+		font-weight: bold;
+		margin-bottom: 30px;
+		text-align: center;
+	}
+
+    #conversation {
+        flex-grow: 1;
+        width: 100%;
+        overflow-y: scroll;
+        border: 1px solid #fff;
+        padding: 10px;
+        background-color: #1b1b1b;
+        margin-bottom: 20px;
+        border-radius: 15px;
+        white-space: pre-line;
+    }
+
+    img {
+        max-width: 100%;
+        margin-top: 10px;
+        border-radius: 15px;
+    }
+
+    button {
+        background-color: #c5157a; /* Netflix's palette pink */
+        color: #fff;
+        font-family: 'Roboto Mono', monospace;
+        font-weight: bold;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border-radius: 50px;
+    }
+
+    button:hover {
+        background-color: #a41262;
+    }
+
+	.Ethan {
+    color: #33FF33; /* Matrix Green */
+	}
+
+	.Lily {
+    color: #33FF33; /* Matrix Green */
+	}
+	body {
+		font-family: 'Source Code Pro', monospace;
+		color: #0f0;
+		background-color: #000;
+		position: relative;
+	}
+
+	#matrix-canvas {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: -1;
+	}
+	#analysis-container {
+		width: 40vw;
+		height: 90vh;
+		background-color: #262626;
+		box-shadow: 0px 0px 20px rgba(255, 255, 255, 0.1);
+		border-radius: 15px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 20px;
+		box-sizing: border-box;
+		position: absolute;
+		right: 0;
+	}
+
+	#analysis-title {
+		color: #33FF33;
+		font-size: 32px;
+		font-weight: bold;
+		margin-bottom: 30px;
+		text-align: center;
+	}
+
+	#analysis-content {
+		flex-grow: 1;
+		width: 100%;
+		overflow-y: scroll;
+		border: 1px solid #fff;
+		padding: 10px;
+		background-color: #1b1b1b;
+		margin-bottom: 20px;
+		border-radius: 15px;
+		white-space: pre-line;
+		color: #00F0FF; /* Add this line to change the text color */
+	}	
+</style>
+</head>
+<body>
+	<canvas id="matrix-canvas"></canvas>
+    <div id="container">
+        <div id="title">The AI Simulation Box</div>
+        <div id="conversation"></div>
+    </div>
+	<div id="analysis-container">
+		<div id="analysis-title">Conversation Analysis</div>
+		<div id="analysis-content"></div>
+	</div>
+	<script>
+    async function displayResponse(response1, image_path1, response2, image_path2) {
+        // Ethan's response
+        var response_html = `<p><span class="Ethan"><strong>HIM:</strong> ${response2}</span></p>`;
+        if (image_path2) {
+            response_html += `<p><img src="/image/${image_path2}" alt="Generated image"></p>`;
+        }
+        $("#conversation").append(response_html);
+        await callTextToSpeechAPI(response2, voice_id2);
+
+        // Lily's response
+        response_html = `<p><span class="Lily"><strong>HER:</strong> ${response1}</span></p>`;
+        if (image_path1) {
+            response_html += `<p><img src="/image/${image_path1}" alt="Generated image"></p>`;
+        }
+        $("#conversation").append(response_html);
+        await callTextToSpeechAPI(response1, voice_id1);
+    }
+
+    async function chatLoop() {
+        let inputText = "Hello, nice too meet you!"; // Initial input
+        while (true) {
+            await new Promise((resolve) => {
+                $.post("/chat", { user_input: inputText })
+                    .done(async function(data) {
+                        await displayResponse(data.response1, data.image_path1, data.response2, data.image_path2);
+                        inputText = data.response1; // Update input with Lily's response
+                        fetchAnalysis(); // Fetch and display analysis content
+                        resolve();
+                    })
+                    .fail(function(jqXHR, textStatus, errorThrown) {
+                        console.error("Error in AJAX request:", textStatus, errorThrown);
+                    });
+            });
+        }
+    }
+
+    function callTextToSpeechAPI(text, voice_id) {
+        return new Promise((resolve, reject) => {
+            $.post("/text_to_speech", { text: text, voice_id: voice_id })
+                .done(function (data) {
+                    console.log("Text-to-speech request successful");
+                    resolve();
+                })
+                .fail(function (jqXHR, textStatus, errorThrown) {
+                    console.error("Error in text-to-speech request:", textStatus, errorThrown);
+                    reject();
+                });
+        });
+    }
+
+    function fetchAnalysis() {
+        $.get("/get_analysis")
+            .done(function(data) {
+                $("#analysis-content").text(data.analysis);
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                console.error("Error in fetching analysis:", textStatus, errorThrown);
+            });
+    }
+
+    async function displayIntro() {
+        // Fetch intro message from the API
+        const response = await fetch("/get_intro");
+        const data = await response.json();
+        const introMessage = data.intro;
+
+        // Display intro message as text
+        const introHTML = `<p><strong>Intro:</strong> ${introMessage}</p>`;
+        $("#conversation").append(introHTML);
+
+        // Use voice_id3 to read the intro message
+        await callTextToSpeechAPI(introMessage, voice_id3);
+    }
+
+    // Add the voice ID variables
+    const voice_id2 = 'Your Voice ID';
+    const voice_id1 = 'Your Voice ID';
+    const voice_id3 = 'Your Voice ID';
+
+    // Start the chat loop when the document is ready
+    $(document).ready(async function () {
+        await displayIntro();
+        chatLoop();
+    });
+
+    function createMatrixRain(canvas) {
+        const ctx = canvas.getContext("2d");
+        const columns = canvas.width / 14;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0f0";
+            ctx.font = "14px Source Code Pro";
+            for (let i = 0; i < drops.length; i++) {
+                const text = String.fromCharCode(Math.random() * 128);
+                ctx.fillText(text, i * 14, drops[i] * 14);
+
+                if (drops[i] * 14 > canvas.height || Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 100);
+    }
+
+    // To initiate the matrix rain
+    document.addEventListener("DOMContentLoaded", () => {
+        const canvas = document.getElementById("matrix-canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        createMatrixRain(canvas);
+    });
+	async function displayIntro() {
+		// Fetch intro message from the API
+		const response = await fetch("/get_intro");
+		const data = await response.json();
+		const introMessage = data.intro;
+
+    // Display intro message as text
+    const introHTML = `<p><strong>Intro:</strong> ${introMessage}</p>`;
+		$("#conversation").append(introHTML);
+
+    // Use voice_id3 to read the intro message
+		await callTextToSpeechAPI(introMessage, voice_id3);
+}
+</script>
+
+</body>
+</html>
