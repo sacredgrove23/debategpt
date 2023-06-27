@@ -13,3 +13,50 @@ Logical Reasoning: Evaluate the bots' logical reasoning skills. Check if they ca
 Ethical and Moral Considerations: Observe whether the bots demonstrate an understanding of ethical and moral principles. Do they avoid engaging in harmful or offensive discussions? Can they identify and address ethical dilemmas?
 
 Empathy and Interpersonal Skills: Assess the bots' ability to show empathy and engage in effective communication. Do they demonstrate active listening, validation of emotions, or supportive responses?
+
+
+# Set the initial message for the conversation
+intro = "Sun Tzu has a dilemma and leans to the side of 'overkill' and invites Hannibal to a friendly debate on the side of "no overkill" in war. Now let the debate begin!"
+
+# Set the initial message for the conversation
+initial_message = "Hello, nice too meet you!"
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    # Extract user input from the request
+    user_input = request.form.get('user_input')
+
+    # Check if the conversation is empty, and if so, use the initial message instead
+    if not conversation1 and not conversation2:
+        user_input = initial_message
+
+    # Chatbot1 conversation
+    response = chatgpt(api_key, conversation1, chatbot1, user_input)
+
+    if "generate_image:" in response:
+        image_prompt = response.split("generate_image:")[1].strip()
+        image_path1 = generate_image(sd_api_key, image_prompt)
+    else:
+        image_path1 = None
+
+    # Chatbot2 conversation
+    response = chatgpt(api_key, conversation2, chatbot2, response)
+
+    if "generate_image:" in response:
+        image_prompt = response.split("generate_image:")[1].strip()
+        image_path2 = generate_image(sd_api_key, image_prompt)
+    else:
+        image_path2 = None
+
+    chatbot1_response = re.sub(r'(Response:|Narration:|Image: generate_image:.*|)', '', conversation1[-1]['content']).strip()
+    chatbot2_response = re.sub(r'(Response:|Narration:|Image: generate_image:.*|)', '', response).strip()
+
+
+"""
+
+# Perform analysis and update the results.txt
+    anal = open_file("analysis.txt").replace("<<CON>>", json.dumps(conversation1 + conversation2))
+    anal2 = chatgpt(api_key, conversation1 + conversation2, "Here is the conversation:", "ANALYSE THE CONVERSATION ABOVE FOR: SENTIMENT: TONE: HUMOR AND CREATIVITY: ETHICAL AND MORAL CONSIDERATIONS: EMPATHY AND INTERPERSONAL SKILLS: GOAL-ORIENTATION: TOPIC MODELING: LEARNING AND ADAPTATION: PERSONALITY TRAITS:")
+
+'''
+
